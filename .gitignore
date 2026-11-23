@@ -39,3 +39,12 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# secrets
+.env
+
+# local tooling config
+.claude/
+
+# dev.to copy of the article (duplicates docs/media)
+docs/devto/

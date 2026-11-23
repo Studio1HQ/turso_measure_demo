@@ -1,22 +1,33 @@
 {
-  "name": "turso_measure_demo",
+  "name": "syncnote",
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@measuresh/react-native": "^0.5.1",
+    "@react-native-community/netinfo": "12.0.1",
+    "@tursodatabase/sync-react-native": "^0.8.3",
     "expo": "~58.0.26",
+    "expo-crypto": "~58.0.8",
+    "expo-dev-client": "~58.0.21",
     "expo-status-bar": "~58.0.5",
     "react": "19.3.0",
     "react-native": "0.88.1"
   },
   "devDependencies": {
+    "@libsql/client": "^0.18.0",
     "@types/react": "~19.3.0",
+    "dotenv": "^18.0.10",
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web"
+    "start": "expo start --dev-client",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "typecheck": "tsc --noEmit",
+    "remote:setup": "node scripts/other-device.mjs setup",
+    "remote:edit": "node scripts/other-device.mjs edit",
+    "remote:show": "node scripts/other-device.mjs show",
+    "remote:reset": "node scripts/other-device.mjs reset"
   },
   "private": true
 }
