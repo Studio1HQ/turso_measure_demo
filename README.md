@@ -6,8 +6,6 @@ An offline-first notes app in React Native and Expo, built to try three tools on
 
 **Turso Sync** stores the notes on the phone and syncs them. **Measure** records what happened on the device when sync misbehaves. **Claude Code**, through the [Measure MCP server](https://measure.sh/docs/mcp), reads that record and explains why.
 
-📖 Full write-up with real numbers: [docs/BLOG.md](docs/BLOG.md) · 🎬 Demo script: [DEMO.md](DEMO.md)
-
 | Saved offline | Edit from another device | Conflict on reconnect |
 |---|---|---|
 | ![Saved on this device while offline](docs/media/scene1-saved-offline.png) | ![Updated from laptop-web-client](docs/media/scene2-live-update.png) | ![Keep mine or Use theirs](docs/media/scene4-conflict-card.png) |
