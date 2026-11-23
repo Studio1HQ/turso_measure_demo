@@ -134,14 +134,6 @@ plugins/        Expo config plugin that fixes the Turso Android build
 docs/           the write-up, the dev.to version, screenshots and diagrams
 ```
 
-## Known issues
-
-- **Turso RN 0.8.3 compiles Rust on Android.** Its `build.gradle` runs `make android` even though prebuilt `.so` files ship in the package. [plugins/withTursoPrebuiltLibs.js](plugins/withTursoPrebuiltLibs.js) turns that task off, and it survives `prebuild --clean`.
-- **`react-native-safe-area-context` isn't used** — its generated paths break the Windows path limit, so the app pads for the system bars itself.
-- **`pull()` can return `true` right after your own push**, so the app compares rows to tell a real remote change from an echo.
-- **`adb emu network speed` only throttles the emulated cellular link.** Turn Wi-Fi off in the emulator to test a slow network.
-- **Only Android has been tested.** The iOS config is in place but hasn't been run.
-
 ## Links
 
 [Turso Sync](https://docs.turso.tech/sync) · [Turso conflict resolution](https://docs.turso.tech/sync/conflict-resolution) · [Measure RN SDK](https://measure.sh/docs/getting-started/react-native) · [Measure MCP](https://measure.sh/docs/mcp) · [Measure on GitHub](https://github.com/measure-sh/measure) · [Expo dev builds](https://docs.expo.dev/develop/development-builds/introduction/) · [Claude Code](https://claude.com/claude-code)
