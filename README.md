@@ -88,7 +88,7 @@ The first launch needs a connection to download the database; after that the app
 | `npm run remote:show` | Print the server's copy of the demo note |
 | `npm run remote:reset` | Restore the demo note on the server |
 
-The `remote:*` scripts are [scripts/other-device.mjs](scripts/other-device.mjs), talking to Turso Cloud over `@libsql/client`. [DEMO.md](DEMO.md) uses them for the four scenarios: saving on a flight, an edit from a laptop, a throttled network, and two people editing one note.
+The `remote:*` scripts are [scripts/other-device.mjs](scripts/other-device.mjs), talking to Turso Cloud over `@libsql/client`. 
 
 ## What Measure records
 
@@ -114,7 +114,7 @@ Background the app for a few seconds so Measure uploads, then ask from inside th
 
 ![From bug report to root cause](docs/media/diagram-mcp.png)
 
-It uses `get_bug_reports` to find the report, `get_session` for the timeline, `get_errors` for the error groups and `get_span_metrics_over_time` for sync timings, then reads `src/store.tsx` to tie it back to the code. [docs/BLOG.md](docs/BLOG.md) walks through a real run.
+It uses `get_bug_reports` to find the report, `get_session` for the timeline, `get_errors` for the error groups and `get_span_metrics_over_time` for sync timings, then reads `src/store.tsx` to tie it back to the code. 
 
 ## Project layout
 
