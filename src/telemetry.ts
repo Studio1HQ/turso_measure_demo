@@ -45,14 +45,33 @@ export async function initTelemetry(): Promise<void> {
   }
 }
 
+/** Hide hostnames in URLs (e.g. the Turso database host) but keep the path, which is useful. */
+function redactUrls(s: string): string {
+  return s.replace(/([a-z][a-z0-9+.-]*:\/\/)[^/\s"']+/gi, '$1<host>');
+}
+
 function clean(attrs: Attrs = {}): Attrs {
   // Measure: values are string | number | boolean; string values max 256 chars.
   const out: Attrs = {};
   for (const [k, v] of Object.entries(attrs)) {
     if (v === undefined || v === null) continue;
-    out[k] = typeof v === 'string' && v.length > 256 ? v.slice(0, 253) + '...' : v;
+    if (typeof v === 'string') {
+      const r = redactUrls(v);
+      out[k] = r.length > 256 ? r.slice(0, 253) + '...' : r;
+    } else {
+      out[k] = v;
+    }
   }
   return out;
+}
+
+/** Copy of an Error with hostnames removed from its message and stack. */
+function redactError(error: unknown): unknown {
+  if (!(error instanceof Error) || !/:\/\//.test(error.message)) return error;
+  const copy = new Error(redactUrls(error.message));
+  copy.name = error.name;
+  if (error.stack) copy.stack = redactUrls(error.stack);
+  return copy;
 }
 
 /** Custom event (shows in session timeline, usable in funnels & filters). */
@@ -78,7 +97,7 @@ export function reportError(error: unknown, attrs?: Attrs): void {
   const attributes = clean(attrs);
   if (__DEV__) console.log('[measure:error]', error, attributes);
   if (!initialized) return;
-  Measure.trackError({ error, attributes }).catch((e) =>
+  Measure.trackError({ error: redactError(error), attributes }).catch((e) =>
     console.warn('[telemetry] trackError failed', e),
   );
 }

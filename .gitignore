@@ -46,5 +46,8 @@ yarn-error.*
 # local tooling config
 .claude/
 
-# dev.to copy of the article (duplicates docs/media)
+# blog, demo script and social media resources (kept locally, not part of the project)
+DEMO.md
+docs/BLOG.md
+docs/media/
 docs/devto/

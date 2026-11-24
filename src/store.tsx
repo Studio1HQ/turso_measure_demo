@@ -38,6 +38,7 @@ import {
 export type SyncStatus = 'synced' | 'pending' | 'syncing' | 'failed' | 'local-only';
 
 const LIVE_PULL_INTERVAL_MS = 5000;
+const OFFLINE_SINCE_KEY = 'offline_since';
 const SLOW_OP_BUDGET_MS = 8000;
 
 export interface Conflict {
@@ -67,7 +68,7 @@ export class OfflineError extends Error {
 /** Reported when a sync phase blows its time budget (the operation keeps running). */
 export class SlowSyncError extends Error {
   constructor(public phase: string, budgetMs: number) {
-    super(`Turso ${phase} still running after ${budgetMs} ms`);
+    super(`Sync ${phase} exceeded the app's ${budgetMs} ms budget and is still running`);
     this.name = 'SlowSyncError';
   }
 }
@@ -173,7 +174,7 @@ export function SyncNoteProvider({ children }: { children: React.ReactNode }) {
       };
       span?.checkpoint(`${phase}_slow`);
       reportError(new SlowSyncError(phase, SLOW_OP_BUDGET_MS), attrs);
-      breadcrumb(`Turso ${phase} is slow`, attrs, LogSeverity.Warning);
+      breadcrumb(`Sync ${phase} is slow`, attrs, LogSeverity.Warning);
     }, SLOW_OP_BUDGET_MS);
     return op.finally(() => {
       clearTimeout(timer);
@@ -245,7 +246,7 @@ export function SyncNoteProvider({ children }: { children: React.ReactNode }) {
       ...before.attrs,
     };
     track('sync_started', base);
-    const root = startSpan('turso.sync');
+    const root = startSpan('sync');
     root.attrs(base);
     let phase = 'start';
     let child: SpanHandle | null = null;
@@ -256,7 +257,7 @@ export function SyncNoteProvider({ children }: { children: React.ReactNode }) {
       // 1) App-level guard: is the server still at the revision our edit was based on?
       if (updates.length > 0) {
         phase = 'conflict_check';
-        child = startSpan('turso.conflict_check', root);
+        child = startSpan('sync.revision_check', root);
         const remote = await watchSlow(phase, fetchRemoteNotes(updates.map((u) => u.note_id)), root);
         const found: Conflict[] = [];
         for (const u of updates) {
@@ -293,13 +294,13 @@ export function SyncNoteProvider({ children }: { children: React.ReactNode }) {
 
       // 2) Turso Sync: push local changes, then pull everyone else's.
       phase = 'push';
-      child = startSpan('turso.push', root);
+      child = startSpan('sync.push', root);
       child.attrs({ pending_count: queue.length, turso_cdc_operations: before.attrs.turso_cdc_operations });
       await watchSlow(phase, db.getNotesDb().push(), root);
       child.end(true);
 
       phase = 'pull';
-      child = startSpan('turso.pull', root);
+      child = startSpan('sync.pull', root);
       const pulled = await watchSlow(phase, db.getNotesDb().pull(), root);
       child.attrs({ changed: pulled });
       child.end(true);
@@ -363,7 +364,7 @@ export function SyncNoteProvider({ children }: { children: React.ReactNode }) {
       await exclusive(async () => {
         const before = new Map(notesRef.current.map((n) => [n.id, noteKey(n)]));
         const s0 = await tursoStats();
-        span = startSpan('turso.pull');
+        span = startSpan('sync.live_pull');
         span.attrs({ trigger: 'live', connection_type: connTypeRef.current });
         const t0 = Date.now();
         // pull() returns true if anything changed (docs: can also be our own push echoing back)
@@ -435,9 +436,17 @@ export function SyncNoteProvider({ children }: { children: React.ReactNode }) {
         onlineRef.current = isOnlineState(net);
         connTypeRef.current = net.type;
         setOnline(onlineRef.current);
-        if (!onlineRef.current) offlineSinceRef.current = Date.now();
-
         await db.openDatabases();
+
+        // When the device went offline, persisted so it survives an app restart.
+        const savedSince = Number(await db.getKv(OFFLINE_SINCE_KEY)) || 0;
+        if (onlineRef.current) {
+          offlineSinceRef.current = null;
+          if (savedSince) await db.setKv(OFFLINE_SINCE_KEY, '');
+        } else {
+          offlineSinceRef.current = savedSince || Date.now();
+          if (!savedSince) await db.setKv(OFFLINE_SINCE_KEY, String(offlineSinceRef.current));
+        }
         const seeded = await db.ensureDemoNote();
         const { pending: p } = await refresh();
         setReady(true);
@@ -471,6 +480,7 @@ export function SyncNoteProvider({ children }: { children: React.ReactNode }) {
         setOnline(next);
         const offlineMs = next && offlineSinceRef.current ? Date.now() - offlineSinceRef.current : 0;
         offlineSinceRef.current = next ? null : Date.now();
+        void db.setKv(OFFLINE_SINCE_KEY, next ? '' : String(offlineSinceRef.current));
         void db.getPending().then((p) => {
           track('connectivity_changed', {
             is_online: next,
